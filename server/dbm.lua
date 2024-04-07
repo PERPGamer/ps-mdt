@@ -1,4 +1,4 @@
-local QBCore = exports['qb-core']:GetCoreObject()
+ESX = exports["es_extended"]:getSharedObject()
 
 -- Get CitizenIDs from Player License
 function GetCitizenID(license)
@@ -66,12 +66,12 @@ function GetPlayerProperties(cid, cb)
 end
 
 function GetPlayerDataById(id)
-    local Player = QBCore.Functions.GetPlayerByCitizenId(id)
+    local Player = ESX.GetPlayerFromIdentifier(id)
     if Player ~= nil then
 		local response = {citizenid = Player.PlayerData.citizenid, charinfo = Player.PlayerData.charinfo, metadata = Player.PlayerData.metadata, job = Player.PlayerData.job}
         return response
     else
-        return MySQL.single.await('SELECT citizenid, charinfo, job, metadata FROM players WHERE citizenid = ? LIMIT 1', { id })
+        return MySQL.single.await('SELECT identifier, charinfo, job, metadata FROM users WHERE identifier = ? LIMIT 1', { id })
     end
 end
 
@@ -97,7 +97,7 @@ end
 
 function GetPlayerLicenses(identifier)
     local response = false
-    local Player = QBCore.Functions.GetPlayerByCitizenId(identifier)
+    local Player = ESX.GetPlayerFromIdentifier(identifier)
     if Player ~= nil then
         return Player.PlayerData.metadata.licences
     else
@@ -119,7 +119,7 @@ function GetPlayerLicenses(identifier)
 end
 
 function ManageLicense(identifier, type, status)
-    local Player = QBCore.Functions.GetPlayerByCitizenId(identifier)
+    local Player = ESX.GetPlayerFromIdentifier(identifier)
     local licenseStatus = nil
     if status == "give" then licenseStatus = true elseif status == "revoke" then licenseStatus = false end
     if Player ~= nil then
@@ -140,7 +140,7 @@ function ManageLicense(identifier, type, status)
 end
 
 function UpdateAllLicenses(identifier, incomingLicenses)
-    local Player = QBCore.Functions.GetPlayerByCitizenId(identifier)
+    local Player = ESX.GetPlayerFromIdentifier(identifier)
     if Player ~= nil then
         Player.Functions.SetMetaData("licences", incomingLicenses)
 
