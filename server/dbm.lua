@@ -1,4 +1,4 @@
-ESX = exports["es_extended"]:getSharedObject()
+local ESX = exports["es_extended"]:getSharedObject()
 
 -- Get CitizenIDs from Player License
 function GetCitizenID(license)
