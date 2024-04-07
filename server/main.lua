@@ -1,4 +1,4 @@
-local QBCore = exports['qb-core']:GetCoreObject()
+local ESX = exports["es_extended"]:getSharedObject()
 local incidents = {}
 local convictions = {}
 local bolos = {}
@@ -24,7 +24,7 @@ local ClockinWebhook = ''
 local IncidentWebhook = ''
 --------------------------------
 
-QBCore.Functions.CreateCallback('ps-mdt:server:MugShotWebhook', function(source, cb)
+ESX.RegisterServerCallback('ps-mdt:server:MugShotWebhook', function(source, cb)
     if MugShotWebhook == '' then
         print("\27[31mA webhook is missing in: MugShotWebhook (server > main.lua > line 16)\27[0m")
     else
@@ -63,7 +63,7 @@ if Config.UseWolfknightRadar == true then
 	RegisterNetEvent("wk:onPlateScanned")
 	AddEventHandler("wk:onPlateScanned", function(cam, plate, index)
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		local PlayerData = GetPlayerData(src)
 		local vehicleOwner = GetVehicleOwner(plate)
 		local bolo, title, boloId = GetBoloStatus(plate)
@@ -71,14 +71,14 @@ if Config.UseWolfknightRadar == true then
 		local driversLicense = PlayerData.metadata['licences'].driver
 
 		if bolo == true then
-			TriggerClientEvent('QBCore:Notify', src, 'BOLO ID: '..boloId..' | Title: '..title..' | Registered Owner: '..vehicleOwner..' | Plate: '..plate, 'error', Config.WolfknightNotifyTime)
+			TriggerClientEvent('esx:showNotification', src, 'BOLO ID: '..boloId..' | Title: '..title..' | Registered Owner: '..vehicleOwner..' | Plate: '..plate, 'error', Config.WolfknightNotifyTime)
 		end
 		if warrant == true then
-			TriggerClientEvent('QBCore:Notify', src, 'WANTED - INCIDENT ID: '..incidentId..' | Registered Owner: '..owner..' | Plate: '..plate, 'error', Config.WolfknightNotifyTime)
+			TriggerClientEvent('esx:showNotification', src, 'WANTED - INCIDENT ID: '..incidentId..' | Registered Owner: '..owner..' | Plate: '..plate, 'error', Config.WolfknightNotifyTime)
 		end
 
 		if Config.PlateScanForDriversLicense and driversLicense == false and vehicleOwner then
-			TriggerClientEvent('QBCore:Notify', src, 'NO DRIVERS LICENCE | Registered Owner: '..vehicleOwner..' | Plate: '..plate, 'error', Config.WolfknightNotifyTime)
+			TriggerClientEvent('esx:showNotification', src, 'NO DRIVERS LICENCE | Registered Owner: '..vehicleOwner..' | Plate: '..plate, 'error', Config.WolfknightNotifyTime)
 		end
 
 		if bolo or warrant or (Config.PlateScanForDriversLicense and not driversLicense) and vehicleOwner then
@@ -105,7 +105,7 @@ end)
 RegisterNetEvent("ps-mdt:server:OnPlayerUnload", function()
 	--// Delete player from the MDT on logout
 	local src = source
-	local player = QBCore.Functions.GetPlayer(src)
+	local player = ESX.GetPlayerFromId(src)
 	if GetActiveData(player.PlayerData.citizenid) then
 		activeUnits[player.PlayerData.citizenid] = nil
 	end
@@ -155,7 +155,7 @@ end)
 
 RegisterNetEvent("ps-mdt:server:ToggleDuty", function()
     local src = source
-    local player = QBCore.Functions.GetPlayer(src)
+    local player = ESX.GetPlayerFromId(src)
     if not player.PlayerData.job.onduty then
 	--// Remove from MDT
 	if GetActiveData(player.PlayerData.citizenid) then
@@ -164,12 +164,12 @@ RegisterNetEvent("ps-mdt:server:ToggleDuty", function()
     end
 end)
 
-QBCore.Commands.Add("mdtleaderboard", "Show MDT leaderboard", {}, false, function(source, args)
+ESX.RegisterCommand("mdtleaderboard", "Show MDT leaderboard", {}, false, function(source, args)
     local PlayerData = GetPlayerData(source)
     local job = PlayerData.job.name
 
     if not IsPoliceOrEms(job) then
-        TriggerClientEvent('QBCore:Notify', source, "You don't have permission to use this command.", 'error')
+        TriggerClientEvent('esx:showNotification', source, "You don't have permission to use this command.", 'error')
         return
     end
 
@@ -186,7 +186,7 @@ QBCore.Commands.Add("mdtleaderboard", "Show MDT leaderboard", {}, false, functio
 	end
 
     sendToDiscord(16753920, "MDT Leaderboard", leaderboard_message, "ps-mdt | Made by Project Sloth")
-    TriggerClientEvent('QBCore:Notify', source, "MDT leaderboard sent to Discord!", 'success')
+    TriggerClientEvent('esx:showNotification', source, "MDT leaderboard sent to Discord!", 'success')
 end)
 
 RegisterNetEvent("ps-mdt:server:ClockSystem", function()
@@ -197,7 +197,7 @@ RegisterNetEvent("ps-mdt:server:ClockSystem", function()
     local lastName = PlayerData.charinfo.lastname:sub(1,1):upper()..PlayerData.charinfo.lastname:sub(2)
     if PlayerData.job.onduty then
         
-        TriggerClientEvent('QBCore:Notify', source, "You're clocked-in", 'success')
+        TriggerClientEvent('esx:showNotification', source, "You're clocked-in", 'success')
 		MySQL.Async.insert('INSERT INTO mdt_clocking (user_id, firstname, lastname, clock_in_time) VALUES (:user_id, :firstname, :lastname, :clock_in_time) ON DUPLICATE KEY UPDATE user_id = :user_id, firstname = :firstname, lastname = :lastname, clock_in_time = :clock_in_time', {
 			user_id = PlayerData.citizenid,
 			firstname = firstName,
@@ -207,7 +207,7 @@ RegisterNetEvent("ps-mdt:server:ClockSystem", function()
 		end)
 		sendToDiscord(65280, "MDT Clock-In", 'Player: **' ..  firstName .. " ".. lastName .. '**\n\nJob: **' .. PlayerData.job.name .. '**\n\nRank: **' .. PlayerData.job.grade.name .. '**\n\nStatus: **On Duty**', "ps-mdt | Made by Project Sloth")
     else
-		TriggerClientEvent('QBCore:Notify', source, "You're clocked-out", 'success')
+		TriggerClientEvent('esx:showNotification', source, "You're clocked-out", 'success')
 		MySQL.query.await('UPDATE mdt_clocking SET clock_out_time = NOW(), total_time = TIMESTAMPDIFF(SECOND, clock_in_time, NOW()) WHERE user_id = @user_id ORDER BY id DESC LIMIT 1', {
 			['@user_id'] = PlayerData.citizenid
 		})
@@ -246,10 +246,10 @@ RegisterNetEvent('mdt:server:openMDT', function()
 	TriggerClientEvent('mdt:client:open', src, bulletin, activeUnits, calls, PlayerData.citizenid)
 end)
 
-QBCore.Functions.CreateCallback('mdt:server:SearchProfile', function(source, cb, sentData)
+ESX.RegisterServerCallback('mdt:server:SearchProfile', function(source, cb, sentData)
     if not sentData then  return cb({}) end
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = ESX.GetPlayerFromId(src)
     if Player then
         local JobType = GetJobType(Player.PlayerData.job.name)
         if JobType ~= nil then
@@ -291,12 +291,12 @@ QBCore.Functions.CreateCallback('mdt:server:SearchProfile', function(source, cb,
     return cb({})
 end)
 
-QBCore.Functions.CreateCallback('ps-mdt:getDispatchCalls', function(source, cb)
+ESX.RegisterServerCallback('ps-mdt:getDispatchCalls', function(source, cb)
     local calls = exports['ps-dispatch']:GetDispatchCalls()
     cb(calls)
 end)
 
-QBCore.Functions.CreateCallback("mdt:server:getWarrants", function(source, cb)
+ESX.RegisterServerCallback("mdt:server:getWarrants", function(source, cb)
     local WarrantData = {}
     local data = MySQL.query.await("SELECT * FROM mdt_convictions", {})
     for _, value in pairs(data) do
@@ -312,7 +312,7 @@ QBCore.Functions.CreateCallback("mdt:server:getWarrants", function(source, cb)
     cb(WarrantData)
 end)
 
-QBCore.Functions.CreateCallback('mdt:server:OpenDashboard', function(source, cb)
+ESX.RegisterServerCallback('mdt:server:OpenDashboard', function(source, cb)
 	local PlayerData = GetPlayerData(source)
 	if not PermCheck(source, PlayerData) then return end
 	local JobType = GetJobType(PlayerData.job.name)
@@ -349,7 +349,7 @@ RegisterNetEvent('mdt:server:deleteBulletin', function(id, title)
 	AddLog("Bulletin with Title: "..title.." was deleted by " .. GetNameFromPlayerData(PlayerData) .. ".")
 end)
 
-QBCore.Functions.CreateCallback('mdt:server:GetProfileData', function(source, cb, sentId)
+ESX.RegisterServerCallback('mdt:server:GetProfileData', function(source, cb, sentId)
 	if not sentId then return cb({}) end
 
 	local src = source
@@ -388,11 +388,11 @@ QBCore.Functions.CreateCallback('mdt:server:GetProfileData', function(source, cb
 			if #apartmentList > 0 then
 				apartmentData = table.concat(apartmentList, ', ')
 			else
-				TriggerClientEvent("QBCore:Notify", src, 'The citizen does not have an apartment.', 'error')
+				TriggerClientEvent("esx:showNotification", src, 'The citizen does not have an apartment.', 'error')
 				print('The citizen does not have an apartment. Set Config.UsingPsHousing to false.')
 			end
 		else
-			TriggerClientEvent("QBCore:Notify", src, 'The citizen does not have a property.', 'error')
+			TriggerClientEvent("esx:showNotification", src, 'The citizen does not have a property.', 'error')
 			print('The citizen does not have a property. Set Config.UsingPsHousing to false.')
 		end	
     elseif Config.UsingDefaultQBApartments then
@@ -401,11 +401,11 @@ QBCore.Functions.CreateCallback('mdt:server:GetProfileData', function(source, cb
             if apartmentData[1] then
                 apartmentData = apartmentData[1].label .. ' (' ..apartmentData[1].name..')'
             else
-                TriggerClientEvent("QBCore:Notify", src, 'The citizen does not have an apartment.', 'error')
+                TriggerClientEvent("esx:showNotification", src, 'The citizen does not have an apartment.', 'error')
                 print('The citizen does not have an apartment. Set Config.UsingDefaultQBApartments to false.')
             end
         else
-            TriggerClientEvent("QBCore:Notify", src, 'The citizen does not have an apartment.', 'error')
+            TriggerClientEvent("esx:showNotification", src, 'The citizen does not have an apartment.', 'error')
             print('The citizen does not have an apartment. Set Config.UsingDefaultQBApartments to false.')
         end
     end
@@ -536,7 +536,7 @@ end)
 
 RegisterNetEvent("mdt:server:saveProfile", function(pfp, information, cid, fName, sName, tags, gallery, licenses, fingerprint)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = ESX.GetPlayerFromId(src)
     UpdateAllLicenses(cid, licenses)
     if Player then
         local JobType = GetJobType(Player.PlayerData.job.name)
@@ -574,7 +574,7 @@ end)
 
 RegisterNetEvent("mdt:server:updateLicense", function(cid, type, status)
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	if Player then
 		if GetJobType(Player.PlayerData.job.name) == 'police' then
 			ManageLicense(cid, type, status)
@@ -586,7 +586,7 @@ end)
 
 RegisterNetEvent('mdt:server:getAllIncidents', function()
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	if Player then
 		local JobType = GetJobType(Player.PlayerData.job.name)
 		if JobType == 'police' or JobType == 'doj' then
@@ -600,7 +600,7 @@ end)
 RegisterNetEvent('mdt:server:searchIncidents', function(query)
 	if query then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		if Player then
 			local JobType = GetJobType(Player.PlayerData.job.name)
 			if JobType == 'police' or JobType == 'doj' then
@@ -617,7 +617,7 @@ end)
 RegisterNetEvent('mdt:server:getIncidentData', function(sentId)
 	if sentId then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		if Player then
 			local JobType = GetJobType(Player.PlayerData.job.name)
 			if JobType == 'police' or JobType == 'doj' then
@@ -653,7 +653,7 @@ end)
 
 RegisterNetEvent('mdt:server:getAllBolos', function()
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	local JobType = GetJobType(Player.PlayerData.job.name)
 	if JobType == 'police' or JobType == 'ambulance' then
 		local matches = MySQL.query.await("SELECT * FROM `mdt_bolos` WHERE jobtype = :jobtype", {jobtype = JobType})
@@ -664,7 +664,7 @@ end)
 RegisterNetEvent('mdt:server:searchBolos', function(sentSearch)
 	if sentSearch then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		local JobType = GetJobType(Player.PlayerData.job.name)
 		if JobType == 'police' or JobType == 'ambulance' then
 			local matches = MySQL.query.await("SELECT * FROM `mdt_bolos` WHERE `id` LIKE :query OR LOWER(`title`) LIKE :query OR `plate` LIKE :query OR LOWER(`owner`) LIKE :query OR LOWER(`individual`) LIKE :query OR LOWER(`detail`) LIKE :query OR LOWER(`officersinvolved`) LIKE :query OR LOWER(`tags`) LIKE :query OR LOWER(`author`) LIKE :query AND jobtype = :jobtype", {
@@ -679,7 +679,7 @@ end)
 RegisterNetEvent('mdt:server:getBoloData', function(sentId)
 	if sentId then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		local JobType = GetJobType(Player.PlayerData.job.name)
 		if JobType == 'police' or JobType == 'ambulance' then
 			local matches = MySQL.query.await("SELECT * FROM `mdt_bolos` WHERE `id` = :id AND jobtype = :jobtype LIMIT 1", {
@@ -699,7 +699,7 @@ end)
 RegisterNetEvent('mdt:server:newBolo', function(existing, id, title, plate, owner, individual, detail, tags, gallery, officersinvolved, time)
 	if id then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		local JobType = GetJobType(Player.PlayerData.job.name)
 		if JobType == 'police' or JobType == 'ambulance' then
 			local fullname = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
@@ -757,7 +757,7 @@ end)
 RegisterNetEvent('mdt:server:deleteWeapons', function(id)
 	if id then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		if Config.RemoveWeaponsPerms[Player.PlayerData.job.name] then
 			if Config.RemoveWeaponsPerms[Player.PlayerData.job.name][Player.PlayerData.job.grade.level] then
 				local fullName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
@@ -765,7 +765,7 @@ RegisterNetEvent('mdt:server:deleteWeapons', function(id)
 				TriggerEvent('mdt:server:AddLog', "A Weapon Info was deleted by "..fullName.." with the ID ("..id..")")
 			else
 				local fullname = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
-				TriggerClientEvent("QBCore:Notify", src, 'No Permissions to do that!', 'error')
+				TriggerClientEvent("esx:showNotification", src, 'No Permissions to do that!', 'error')
 				TriggerEvent('mdt:server:AddLog', fullname.." tryed to delete a Weapon Info with the ID ("..id..")")
 			end
 		end
@@ -775,7 +775,7 @@ end)
 RegisterNetEvent('mdt:server:deleteReports', function(id)
 	if id then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		if Config.RemoveReportPerms[Player.PlayerData.job.name] then
 			if Config.RemoveReportPerms[Player.PlayerData.job.name][Player.PlayerData.job.grade.level] then
 				local fullName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
@@ -783,7 +783,7 @@ RegisterNetEvent('mdt:server:deleteReports', function(id)
 				TriggerEvent('mdt:server:AddLog', "A Report was deleted by "..fullName.." with the ID ("..id..")")
 			else
 				local fullname = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
-				TriggerClientEvent("QBCore:Notify", src, 'No Permissions to do that!', 'error')
+				TriggerClientEvent("esx:showNotification", src, 'No Permissions to do that!', 'error')
 				TriggerEvent('mdt:server:AddLog', fullname.." tryed to delete a Report with the ID ("..id..")")
 			end
 		end
@@ -792,7 +792,7 @@ end)
 
 RegisterNetEvent('mdt:server:deleteIncidents', function(id)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = ESX.GetPlayerFromId(src)
     if Config.RemoveIncidentPerms[Player.PlayerData.job.name] then
         if Config.RemoveIncidentPerms[Player.PlayerData.job.name][Player.PlayerData.job.grade.level] then
             local fullName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
@@ -805,7 +805,7 @@ RegisterNetEvent('mdt:server:deleteIncidents', function(id)
             end)
         else
             local fullname = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
-            TriggerClientEvent("QBCore:Notify", src, 'No Permissions to do that!', 'error')
+            TriggerClientEvent("esx:showNotification", src, 'No Permissions to do that!', 'error')
             TriggerEvent('mdt:server:AddLog', fullname.." tried to delete an Incident with the ID ("..id..")")
         end
     end
@@ -814,7 +814,7 @@ end)
 RegisterNetEvent('mdt:server:deleteBolo', function(id)
 	if id then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		local JobType = GetJobType(Player.PlayerData.job.name)
 		if JobType == 'police' then
 			local fullname = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
@@ -827,7 +827,7 @@ end)
 RegisterNetEvent('mdt:server:deleteICU', function(id)
 	if id then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		local JobType = GetJobType(Player.PlayerData.job.name)
 		if JobType == 'ambulance' then
 			local fullname = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
@@ -840,7 +840,7 @@ end)
 RegisterNetEvent('mdt:server:incidentSearchPerson', function(query)
     if query then
         local src = source
-        local Player = QBCore.Functions.GetPlayer(src)
+        local Player = ESX.GetPlayerFromId(src)
         if Player then
             local JobType = GetJobType(Player.PlayerData.job.name)
             if JobType == 'police' or JobType == 'doj' or JobType == 'ambulance' then
@@ -875,7 +875,7 @@ end)
 
 RegisterNetEvent('mdt:server:getAllReports', function()
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	if Player then
 		local JobType = GetJobType(Player.PlayerData.job.name)
 		if JobType == 'police' or JobType == 'doj' or JobType == 'ambulance' then
@@ -891,7 +891,7 @@ end)
 RegisterNetEvent('mdt:server:getReportData', function(sentId)
 	if sentId then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		if Player then
 			local JobType = GetJobType(Player.PlayerData.job.name)
 			if JobType == 'police' or JobType == 'doj' or JobType == 'ambulance' then
@@ -914,7 +914,7 @@ end)
 RegisterNetEvent('mdt:server:searchReports', function(sentSearch)
 	if sentSearch then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		if Player then
 			local JobType = GetJobType(Player.PlayerData.job.name)
 			if JobType == 'police' or JobType == 'doj' or JobType == 'ambulance' then
@@ -933,7 +933,7 @@ end)
 RegisterNetEvent('mdt:server:newReport', function(existing, id, title, reporttype, details, tags, gallery, officers, civilians, time)
 	if id then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		if Player then
 			local JobType = GetJobType(Player.PlayerData.job.name)
 			if JobType ~= nil then
@@ -987,14 +987,14 @@ RegisterNetEvent('mdt:server:newReport', function(existing, id, title, reporttyp
 	end
 end)
 
-QBCore.Functions.CreateCallback('mdt:server:SearchVehicles', function(source, cb, sentData)
+ESX.RegisterServerCallback('mdt:server:SearchVehicles', function(source, cb, sentData)
 	if not sentData then  return cb({}) end
 	local src = source
 	local PlayerData = GetPlayerData(src)
 	if not PermCheck(source, PlayerData) then return cb({}) end
 
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	if Player then
 		local JobType = GetJobType(Player.PlayerData.job.name)
 		if JobType == 'police' or JobType == 'doj' then
@@ -1044,7 +1044,7 @@ end)
 RegisterNetEvent('mdt:server:getVehicleData', function(plate)
 	if plate then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		if Player then
 			local JobType = GetJobType(Player.PlayerData.job.name)
 			if JobType == 'police' or JobType == 'doj' then
@@ -1090,7 +1090,7 @@ end)
 RegisterNetEvent('mdt:server:saveVehicleInfo', function(dbid, plate, imageurl, notes, stolen, code5, impoundInfo, points)
 	if plate then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		if Player then
 			if GetJobType(Player.PlayerData.job.name) == 'police' then
 				if dbid == nil then dbid = 0 end;
@@ -1167,7 +1167,7 @@ end)
 
 RegisterNetEvent('mdt:server:searchCalls', function(calls)
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	local JobType = GetJobType(Player.PlayerData.job.name)
 	if JobType == 'police' then
 		TriggerClientEvent('mdt:client:getCalls', src, calls)
@@ -1175,12 +1175,12 @@ RegisterNetEvent('mdt:server:searchCalls', function(calls)
 	end
 end)
 
-QBCore.Functions.CreateCallback('mdt:server:SearchWeapons', function(source, cb, sentData)
+ESX.RegisterServerCallback('mdt:server:SearchWeapons', function(source, cb, sentData)
 	if not sentData then  return cb({}) end
 	local PlayerData = GetPlayerData(source)
 	if not PermCheck(source, PlayerData) then return cb({}) end
 
-	local Player = QBCore.Functions.GetPlayer(source)
+	local Player = ESX.GetPlayerFromId(source)
 	if Player then
 		local JobType = GetJobType(Player.PlayerData.job.name)
 		if JobType == 'police' or JobType == 'doj' then
@@ -1197,7 +1197,7 @@ RegisterNetEvent('mdt:server:saveWeaponInfo', function(serial, imageurl, notes, 
 		local PlayerData = GetPlayerData(source)
 		if not PermCheck(source, PlayerData) then return cb({}) end
 
-		local Player = QBCore.Functions.GetPlayer(source)
+		local Player = ESX.GetPlayerFromId(source)
 		if Player then
 			local JobType = GetJobType(Player.PlayerData.job.name)
 			if JobType == 'police' or JobType == 'doj' then
@@ -1248,7 +1248,7 @@ exports('CreateWeaponInfo', CreateWeaponInfo)
 
 RegisterNetEvent('mdt:server:getWeaponData', function(serial)
 	if serial then
-		local Player = QBCore.Functions.GetPlayer(source)
+		local Player = ESX.GetPlayerFromId(source)
 		if Player then
 			local JobType = GetJobType(Player.PlayerData.job.name)
 			if JobType == 'police' or JobType == 'doj' then
@@ -1261,7 +1261,7 @@ end)
 
 RegisterNetEvent('mdt:server:getAllLogs', function()
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	if Player then
 		if Config.LogPerms[Player.PlayerData.job.name] then
 			if Config.LogPerms[Player.PlayerData.job.name][Player.PlayerData.job.grade.level] then
@@ -1318,13 +1318,13 @@ RegisterNetEvent('mdt:server:getPenalCode', function()
 end)
 
 RegisterNetEvent('mdt:server:setCallsign', function(cid, newcallsign)
-	local Player = QBCore.Functions.GetPlayerByCitizenId(cid)
+	local Player = ESX.GetPlayerFromIdentifier(cid)
 	Player.Functions.SetMetaData("callsign", newcallsign)
 end)
 
 RegisterNetEvent('mdt:server:saveIncident', function(id, title, information, tags, officers, civilians, evidence, associated, time)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = ESX.GetPlayerFromId(src)
     if Player then
         if GetJobType(Player.PlayerData.job.name) == 'police' then
             if id == 0 then
@@ -1494,7 +1494,7 @@ end)
 -- Dispatch
 RegisterNetEvent('mdt:server:setWaypoint', function(callid)
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	local callid = tonumber(callid)
 	local JobType = GetJobType(Player.PlayerData.job.name)
 	if not callid then return end
@@ -1512,7 +1512,7 @@ end)
 
 RegisterNetEvent('mdt:server:attachedUnits', function(callid)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = ESX.GetPlayerFromId(src)
     local JobType = GetJobType(Player.PlayerData.job.name)
 	if not callid then return end
     if JobType == 'police' or JobType == 'ambulance' then
@@ -1529,7 +1529,7 @@ end)
 
 RegisterNetEvent('mdt:server:setDispatchWaypoint', function(callid, cid)
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	local callid = tonumber(callid)
 	local JobType = GetJobType(Player.PlayerData.job.name)
 	if not callid then return end
@@ -1547,7 +1547,7 @@ end)
 
 RegisterNetEvent('mdt:server:callDragAttach', function(callid, cid)
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	local playerdata = {
 		name = Player.PlayerData.charinfo.firstname.. " "..Player.PlayerData.charinfo.lastname,
 		job = Player.PlayerData.job.name,
@@ -1567,7 +1567,7 @@ end)
 
 RegisterNetEvent('mdt:server:setWaypoint:unit', function(cid)
 	local src = source
-	local Player = QBCore.Functions.GetPlayerByCitizenId(cid)
+	local Player = ESX.GetPlayerFromIdentifier(cid)
 	local PlayerCoords = GetEntityCoords(GetPlayerPed(Player.PlayerData.source))
 	TriggerClientEvent("mdt:client:setWaypoint:unit", src, PlayerCoords)
 end)
@@ -1577,7 +1577,7 @@ end)
 RegisterNetEvent('mdt:server:sendMessage', function(message, time)
 	if message and time then
 		local src = source
-		local Player = QBCore.Functions.GetPlayer(src)
+		local Player = ESX.GetPlayerFromId(src)
 		if Player then
 			MySQL.scalar("SELECT pfp FROM `mdt_data` WHERE cid=:id LIMIT 1", {
 				id = Player.PlayerData.citizenid -- % wildcard, needed to search for all alike results
@@ -1611,7 +1611,7 @@ end)
 
 RegisterNetEvent('mdt:server:getCallResponses', function(callid)
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	if IsPoliceOrEms(Player.PlayerData.job.name) then
 		if isDispatchRunning then
 			
@@ -1622,7 +1622,7 @@ end)
 
 RegisterNetEvent('mdt:server:sendCallResponse', function(message, time, callid)
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	local name = Player.PlayerData.charinfo.firstname.. " "..Player.PlayerData.charinfo.lastname
 	if IsPoliceOrEms(Player.PlayerData.job.name) then
 		TriggerEvent('dispatch:sendCallResponse', src, callid, message, time, function(isGood)
@@ -1635,7 +1635,7 @@ end)
 
 RegisterNetEvent('mdt:server:setRadio', function(cid, newRadio)
 	local src = source
-	local targetPlayer = QBCore.Functions.GetPlayerByCitizenId(cid)
+	local targetPlayer = ESX.GetPlayerFromIdentifier(cid)
 	local targetSource = targetPlayer.PlayerData.source
 	local targetName = targetPlayer.PlayerData.charinfo.firstname .. ' ' .. targetPlayer.PlayerData.charinfo.lastname
 
@@ -1643,7 +1643,7 @@ RegisterNetEvent('mdt:server:setRadio', function(cid, newRadio)
 	if radio ~= nil then
 		TriggerClientEvent('mdt:client:setRadio', targetSource, newRadio)
 	else
-		TriggerClientEvent("QBCore:Notify", src, targetName..' does not have a radio!', 'error')
+		TriggerClientEvent("esx:showNotification", src, targetName..' does not have a radio!', 'error')
 	end
 end)
 
@@ -1662,7 +1662,7 @@ exports('isRequestVehicle', isRequestVehicle)
 
 RegisterNetEvent('mdt:server:impoundVehicle', function(sentInfo, sentVehicle)
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	if Player then
 		if GetJobType(Player.PlayerData.job.name) == 'police' then
 			if sentInfo and type(sentInfo) == 'table' then
@@ -1707,7 +1707,7 @@ end)
 RegisterNetEvent('mdt:server:removeImpound', function(plate, currentSelection)
 	print("Removing impound", plate, currentSelection)
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	if Player then
 		if GetJobType(Player.PlayerData.job.name) == 'police' then
 			local result = MySQL.single.await("SELECT id, vehicle FROM `player_vehicles` WHERE plate=:plate LIMIT 1", { plate = string.gsub(plate, "^%s*(.-)%s*$", "%1")})
@@ -1722,7 +1722,7 @@ end)
 
 RegisterNetEvent('mdt:server:statusImpound', function(plate)
 	local src = source
-	local Player = QBCore.Functions.GetPlayer(src)
+	local Player = ESX.GetPlayerFromId(src)
 	if Player then
 		if GetJobType(Player.PlayerData.job.name) == 'police' then
 			local vehicle = MySQL.query.await("SELECT id, plate FROM `player_vehicles` WHERE plate=:plate LIMIT 1", { plate = string.gsub(plate, "^%s*(.-)%s*$", "%1")})
@@ -1757,7 +1757,7 @@ function GetWarrantStatus(plate)
     local result = MySQL.query.await("SELECT p.plate, p.citizenid, m.id FROM player_vehicles p INNER JOIN mdt_convictions m ON p.citizenid = m.cid WHERE m.warrant =1 AND p.plate =?", {plate})
 	if result and result[1] then
 		local citizenid = result[1]['citizenid']
-		local Player = QBCore.Functions.GetPlayerByCitizenId(citizenid)
+		local Player = ESX.GetPlayerFromIdentifier(citizenid)
 		local owner = Player.PlayerData.charinfo.firstname.." "..Player.PlayerData.charinfo.lastname
 		local incidentId = result[1]['id']
 		return true, owner, incidentId
@@ -1779,17 +1779,17 @@ function GetVehicleOwner(plate)
 	local result = MySQL.query.await('SELECT plate, citizenid, id FROM player_vehicles WHERE plate = @plate', {['@plate'] = plate})
 	if result and result[1] then
 		local citizenid = result[1]['citizenid']
-		local Player = QBCore.Functions.GetPlayerByCitizenId(citizenid)
+		local Player = ESX.GetPlayerFromIdentifier(citizenid)
 		local owner = Player.PlayerData.charinfo.firstname.." "..Player.PlayerData.charinfo.lastname
 		return owner
 	end
 end
 
 -- Returns the source for the given citizenId
-QBCore.Functions.CreateCallback('mdt:server:GetPlayerSourceId', function(source, cb, targetCitizenId)
-    local targetPlayer = QBCore.Functions.GetPlayerByCitizenId(targetCitizenId)
+ESX.RegisterServerCallback('mdt:server:GetPlayerSourceId', function(source, cb, targetCitizenId)
+    local targetPlayer = ESX.GetPlayerFromIdentifier(targetCitizenId)
     if targetPlayer == nil then 
-        TriggerClientEvent('QBCore:Notify', source, "Citizen seems Asleep / Missing", "error")
+        TriggerClientEvent('esx:showNotification', source, "Citizen seems Asleep / Missing", "error")
         return
     end
     local targetSource = targetPlayer.PlayerData.source
@@ -1797,8 +1797,8 @@ QBCore.Functions.CreateCallback('mdt:server:GetPlayerSourceId', function(source,
     cb(targetSource)
 end)
 
-QBCore.Functions.CreateCallback('getWeaponInfo', function(source, cb)
-    local Player = QBCore.Functions.GetPlayer(source)
+ESX.RegisterServerCallback('getWeaponInfo', function(source, cb)
+    local Player = ESX.GetPlayerFromId(source)
     local weaponInfos = {}
 	if Config.InventoryForWeaponsImages == "ox_inventory" then
 		local inv = exports.ox_inventory:GetInventoryItems(source)
@@ -1844,9 +1844,9 @@ RegisterNetEvent('mdt:server:registerweapon', function(serial, imageurl, notes, 
 end)
 
 local function giveCitationItem(src, citizenId, fine, incidentId)
-	local Player = QBCore.Functions.GetPlayerByCitizenId(citizenId)
+	local Player = ESX.GetPlayerFromIdentifier(citizenId)
 	local PlayerName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
-	local Officer = QBCore.Functions.GetPlayer(src)
+	local Officer = ESX.GetPlayerFromId(src)
 	local OfficerFullName = '(' .. Officer.PlayerData.metadata.callsign .. ') ' .. Officer.PlayerData.charinfo.firstname .. ' ' .. Officer.PlayerData.charinfo.lastname
 	local info = {}
 	local date = os.date("%Y-%m-%d %H:%M")
@@ -1870,7 +1870,7 @@ local function giveCitationItem(src, citizenId, fine, incidentId)
 		}
 	end
 	Player.Functions.AddItem('mdtcitation', 1, false, info)
-	TriggerClientEvent('QBCore:Notify', src, PlayerName.." (" ..citizenId.. ") received a citation!")
+	TriggerClientEvent('esx:showNotification', src, PlayerName.." (" ..citizenId.. ") received a citation!")
 	if Config.QBBankingUse then 
 		exports['qb-banking']:AddMoney(Officer.PlayerData.job.name, fine) 
 	end
@@ -1881,21 +1881,21 @@ end
 -- Removes money from the players bank and gives them a citation item
 RegisterNetEvent('mdt:server:removeMoney', function(citizenId, fine, incidentId)
 	local src = source
-	local Player = QBCore.Functions.GetPlayerByCitizenId(citizenId)
+	local Player = ESX.GetPlayerFromIdentifier(citizenId)
 	
 	if not antiSpam then
 		if Player.Functions.RemoveMoney('bank', fine, 'lspd-fine') then
-			TriggerClientEvent('QBCore:Notify', Player.PlayerData.source, fine.."$ was removed from your bank!")
+			TriggerClientEvent('esx:showNotification', Player.PlayerData.source, fine.."$ was removed from your bank!")
 			giveCitationItem(src, citizenId, fine, incidentId)
 		else
-			TriggerClientEvent('QBCore:Notify', Player.PlayerData.source, "Something went wrong!")
+			TriggerClientEvent('esx:showNotification', Player.PlayerData.source, "Something went wrong!")
 		end
 		antiSpam = true
 		SetTimeout(60000, function()
 			antiSpam = false
 		end)
 	else
-		TriggerClientEvent('QBCore:Notify', src, "On cooldown!")
+		TriggerClientEvent('esx:showNotification', src, "On cooldown!")
 	end
 end)
 
