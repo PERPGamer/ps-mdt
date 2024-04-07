@@ -1,7 +1,7 @@
-local QBCore = exports['qb-core']:GetCoreObject()
+local ESX = exports["es_extended"]:getSharedObject()
 
 function GetPlayerData(source)
-	local Player = QBCore.Functions.GetPlayer(source)
+	local Player = ESX.GetPlayerFromId(source)
 	if Player == nil then return end -- Player not loaded in correctly
 	return Player.PlayerData
 end
