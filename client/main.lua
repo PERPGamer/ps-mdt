@@ -1,4 +1,4 @@
-QBCore = exports['qb-core']:GetCoreObject()
+ESX = exports["es_extended"]:getSharedObject()
 local PlayerData = {}
 local CurrentCops = 0
 local isOpen = false
@@ -22,12 +22,12 @@ end)
 
 
 -- Events from qbcore
-RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
-    PlayerData = QBCore.Functions.GetPlayerData()
+RegisterNetEvent('esx:playerLoaded', function()
+    PlayerData = ESX.GetPlayerData()
     callSign = PlayerData.metadata.callsign
 end)
 
-RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+RegisterNetEvent('esx:onPlayerLogout', function()
     TriggerServerEvent("ps-mdt:server:OnPlayerUnload")
     PlayerData = {}
 end)
