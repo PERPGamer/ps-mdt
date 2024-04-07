@@ -32,7 +32,7 @@ RegisterNetEvent('esx:onPlayerLogout', function()
     PlayerData = {}
 end)
 
-RegisterNetEvent('QBCore:Client:OnJobUpdate', function(JobInfo)
+RegisterNetEvent('esx:setJob', function(JobInfo)
     PlayerData.job = JobInfo
 end)
 
@@ -205,7 +205,7 @@ RegisterNetEvent('mdt:client:dashboardbulletin', function(sentData)
 end)
 
 RegisterNetEvent('mdt:client:dashboardWarrants', function()
-    QBCore.Functions.TriggerCallback("mdt:server:getWarrants", function(data)
+    ESX.TriggerServerCallback("mdt:server:getWarrants", function(data)
         if data then
             SendNUIMessage({ type = "warrants", data = data })
         end
@@ -278,7 +278,7 @@ end)
 RegisterNUICallback("searchProfiles", function(data, cb)
     local p = promise.new()
 
-    QBCore.Functions.TriggerCallback('mdt:server:SearchProfile', function(result)
+    ESX.TriggerServerCallbackk('mdt:server:SearchProfile', function(result)
         p:resolve(result)
     end, data.name)
 
@@ -313,7 +313,7 @@ RegisterNUICallback("getProfileData", function(data, cb)
     local getProfileDataPromise = function(data)
         if p then return end
         p = promise.new()
-        QBCore.Functions.TriggerCallback('mdt:server:GetProfileData', function(result)
+        ESX.TriggerServerCallback('mdt:server:GetProfileData', function(result)
             p:resolve(result)
         end, data)
         return Citizen.Await(p)
@@ -394,7 +394,7 @@ RegisterNUICallback("sendFine", function(data, cb)
     
     -- Gets the player id from the citizenId
     local p = promise.new()
-    QBCore.Functions.TriggerCallback('mdt:server:GetPlayerSourceId', function(result)
+    ESX.TriggerServerCallback('mdt:server:GetPlayerSourceId', function(result)
         p:resolve(result)
     end, citizenId)
 
@@ -419,7 +419,7 @@ RegisterNUICallback("sendToCommunityService", function(data, cb)
 
     -- Gets the player id from the citizenId
     local p = promise.new()
-    QBCore.Functions.TriggerCallback('mdt:server:GetPlayerSourceId', function(result)
+    ESX.TriggerServerCallback('mdt:server:GetPlayerSourceId', function(result)
         p:resolve(result)
     end, citizenId)
 
@@ -637,7 +637,7 @@ RegisterNUICallback("searchVehicles", function(data, cb)
 
     local p = promise.new()
 
-    QBCore.Functions.TriggerCallback('mdt:server:SearchVehicles', function(result)
+    ESX.TriggerServerCallback('mdt:server:SearchVehicles', function(result)
         p:resolve(result)
     end, data.name)
 
@@ -728,7 +728,7 @@ end)
 RegisterNUICallback("searchWeapons", function(data, cb)
     local p = promise.new()
 
-    QBCore.Functions.TriggerCallback('mdt:server:SearchWeapons', function(result)
+    ESX.TriggerServerCallback('mdt:server:SearchWeapons', function(result)
         p:resolve(result)
     end, data.name)
 
@@ -1001,7 +1001,7 @@ RegisterNetEvent('mdt:client:statusImpound', function(data, plate)
 end)
 
 function GetPlayerWeaponInfos(cb)
-    QBCore.Functions.TriggerCallback('getWeaponInfo', function(weaponInfos)
+    ESX.TriggerServerCallback('getWeaponInfo', function(weaponInfos)
         cb(weaponInfos)
     end)
 end
