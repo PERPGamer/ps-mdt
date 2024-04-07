@@ -46,15 +46,15 @@ end
 local function TakeOutImpound(vehicle)
     local coords = Config.ImpoundLocations[currentGarage]
     if coords then
-        QBCore.Functions.SpawnVehicle(vehicle.vehicle, function(veh)
-            QBCore.Functions.TriggerCallback('qb-garage:server:GetVehicleProperties', function(properties)
-                QBCore.Functions.SetVehicleProperties(veh, properties)
+        ESX.Game.SpawnVehicle(vehicle.vehicle, function(veh)
+            ESX.TriggerServerCallback('qb-garage:server:GetVehicleProperties', function(properties)
+                ESX.Game.SetVehicleProperties(veh, properties)
                 SetVehicleNumberPlateText(veh, vehicle.plate)
                 SetEntityHeading(veh, coords.w)
                 exports[Config.Fuel]:SetFuel(veh, vehicle.fuel)
                 doCarDamage(veh, vehicle)
                 TriggerServerEvent('police:server:TakeOutImpound',vehicle.plate)
-                TriggerEvent("vehiclekeys:client:SetOwner", QBCore.Functions.GetPlate(veh))
+                TriggerEvent("vehiclekeys:client:SetOwner", ESX.GetPlate(veh)) -- I have edited ESX to add this.
                 SetVehicleEngineOn(veh, true, true)
             end, vehicle.plate)
         end, coords, true)
@@ -70,6 +70,6 @@ RegisterNetEvent('ps-mdt:client:TakeOutImpound', function(data)
         local vehicle = data.vehicle
         TakeOutImpound(data)
     else
-        QBCore.Functions.Notify("You are too far away from the impound location!")
+        ESX.ShowNotification("You are too far away from the impound location!")
     end
 end)
