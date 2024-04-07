@@ -68,7 +68,7 @@ end)
 AddEventHandler('onResourceStart', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
     Wait(150)
-    PlayerData = QBCore.Functions.GetPlayerData()
+    PlayerData = ESX.GetPlayerData()
     callSign = PlayerData.metadata.callsign
 end)
 
@@ -90,14 +90,14 @@ RegisterKeyMapping('mdt', 'Open Police MDT', 'keyboard', 'k')
 
 RegisterCommand('mdt', function()
     local plyPed = PlayerPedId()
-    PlayerData = QBCore.Functions.GetPlayerData()
+    PlayerData = ESX.GetPlayerData()
     if not PlayerData.metadata["isdead"] and not PlayerData.metadata["inlaststand"] and not PlayerData.metadata["ishandcuffed"] and not IsPauseMenuActive() then
         if GetJobType(PlayerData.job.name) ~= nil then
             TriggerServerEvent('mdt:server:openMDT')
             TriggerServerEvent('mdt:requestOfficerData')
         end
     else
-        QBCore.Functions.Notify("Can't do that!", "error")
+        ESX.ShowNotification("Can't do that!", "error")
     end
 end, false)
 
@@ -464,7 +464,7 @@ RegisterNUICallback('SetHouseLocation', function(data, cb)
         coords[#coords+1] = tonumber(word)
     end
     SetNewWaypoint(coords[1], coords[2])
-    QBCore.Functions.Notify('GPS has been set!', 'success')
+    ESX.ShowNotification('GPS has been set!', 'success')
 end)
 
 --====================================================================================
@@ -700,7 +700,7 @@ RegisterNUICallback("saveVehicleInfo", function(data, cb)
             end
 
             if found == 0 then
-                QBCore.Functions.Notify('Vehicle not found!', 'error')
+                ESX.ShowNotification('Vehicle not found!', 'error')
                 SendNUIMessage({ type = "redImpound" })
             end
         else
@@ -833,9 +833,9 @@ RegisterNetEvent('mdt:client:setRadio', function(radio)
     if type(tonumber(radio)) == "number" then
         exports["pma-voice"]:setVoiceProperty("radioEnabled", true)
         exports["pma-voice"]:setRadioChannel(tonumber(radio))
-        QBCore.Functions.Notify("You have set your radio frequency to "..radio..".", "success")
+        ESX.ShowNotification("You have set your radio frequency to "..radio..".", "success")
     else
-        QBCore.Functions.Notify("Invalid Station(Please enter a number)", "error")
+        ESX.ShowNotification("Invalid Station(Please enter a number)", "error")
     end
 end)
 
@@ -1076,11 +1076,11 @@ end
 if Config.UseWolfknightRadar == true then
     RegisterNetEvent("ps-mdt:client:trafficStop")
     AddEventHandler("ps-mdt:client:trafficStop", function()
-        local plyData = QBCore.Functions.GetPlayerData()
+        local plyData = ESX.GetPlayerData()
         local currentPos = GetEntityCoords(PlayerPedId())
         local locationInfo = getStreetandZone(currentPos)
         if not IsPedInAnyPoliceVehicle(PlayerPedId()) then
-            QBCore.Functions.Notify("Not in any Police Vehicle!", "error") 
+            ESX.ShowNotification("Not in any Police Vehicle!", "error") 
             return 
         end
         local data, vData, vehicle = exports["wk_wars2x"]:GetFrontPlate(), {}
@@ -1114,7 +1114,7 @@ if Config.UseWolfknightRadar == true then
                 coolDown = false
             end)
         else
-            QBCore.Functions.Notify("Traffic Stop Cooldown active!", "error") 
+            ESX.ShowNotification("Traffic Stop Cooldown active!", "error") 
         end
     end)
 end
